@@ -16,7 +16,7 @@ One folder per theme. Each holds:
 | `trading` | candlestick chart of your weekly commits, order flow, watchlist |
 | `terminal` | zsh windows: `whoami`, `git shortlog`, an `nmap`-style language table, a heatmap |
 | `soc` | a security-operations console: activity gauge, alert severity, alert calendar |
-| `blueprint` | a technical drawing on blue grid paper: dimension lines, a hatch-pattern heatmap, a repo system diagram and a title block |
+| `blueprint` | a technical drawing on blue grid paper: one continuous sheet with 4 figures (a weekly activity chart with dimension lines, a hatch-pattern heatmap, schedules for weekday load, languages and stats, and a repo system diagram with a title block) |
 
 ## Use a theme
 Copy `themes/<name>/snippet.md` into the root `README.md`, or run **Actions -> Switch README theme** and pick the theme from the drop-down.

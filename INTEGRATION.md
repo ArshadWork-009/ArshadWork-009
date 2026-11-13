@@ -84,7 +84,7 @@ Every theme lives in its own folder under `themes/`.
 | `trading` | candlestick chart of your weekly commits, order flow, watchlist |
 | `terminal` | zsh windows: `whoami`, `git shortlog`, an `nmap`-style language table, a heatmap |
 | `soc` | a security-operations console: activity gauge, alert severity, alert calendar |
-| `blueprint` | a technical drawing on blue grid paper, in 4 sheets: an overview with dimension lines, a hatch-pattern heatmap, a repo system diagram and a title block |
+| `blueprint` | a technical drawing on blue grid paper: one continuous sheet with 4 figures (a weekly activity chart with dimension lines, a hatch-pattern heatmap, schedules for weekday load, languages and stats, and a repo system diagram with a title block) |
 
 **Option A, from the website:**
 
@@ -101,7 +101,7 @@ git commit -m "Use the terminal theme"
 git push
 ```
 
-Swap `terminal` for any folder name under `themes/`. For the blueprint theme (4 sheets) that is `cp themes/blueprint/snippet.md README.md`.
+Swap `terminal` for any folder name under `themes/`. For the blueprint theme (one sheet, 4 figures) that is `cp themes/blueprint/snippet.md README.md`.
 
 The 3-hourly build notices which theme `README.md` is using and keeps it up to date, so you can switch whenever you like.
 
@@ -171,7 +171,7 @@ themes/<name>/            one folder per theme: default, trading, terminal, soc,
   generate.py             draws that theme
   assets/*.svg            the generated images (committed by the Action)
   snippet.md              the README for that theme, ready to paste
-themes/blueprint/assets/  e.g. its 4 sheets: overview, hatchmap, diagram, titleblock
+themes/blueprint/assets/  e.g. one sheet in 4 figures: fig1.svg to fig4.svg
 README.md                 the active theme's snippet; this is what your profile shows
 .github/workflows/        update-profile.yml (every 3h) and switch-theme.yml (manual)
 ```
