@@ -1,0 +1,32 @@
+name: Switch README theme
+
+on:
+  workflow_dispatch: # Actions tab -> Run workflow (only repo writers can run it)
+    inputs:
+      theme:
+        description: "Theme folder name under themes/ (e.g. default, trading)"
+        type: string
+        default: trading
+
+permissions:
+  contents: write
+
+jobs:
+  switch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy the theme's snippet over README.md
+        env:
+          THEME: ${{ inputs.theme }}
+        run: |
+          [[ "$THEME" =~ ^[a-z0-9_-]+$ ]] && test -f "themes/$THEME/snippet.md" || { echo "no such theme: $THEME"; exit 1; }
+          cp "themes/$THEME/snippet.md" README.md
+      - name: Commit if changed
+        env:
+          THEME: ${{ inputs.theme }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add README.md
+          git diff --cached --quiet || git commit -m "chore: switch README to $THEME theme" && git push

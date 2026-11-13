@@ -5,7 +5,7 @@ on:
     - cron: "0 */3 * * *" # every 3 hours
   workflow_dispatch: # manual run from the Actions tab
   push:
-    paths: ["scripts/generate.py"]
+    paths: ["themes/*/generate.py", "scripts/profile_data.py", "profile.json"]
 
 permissions:
   contents: write
@@ -18,13 +18,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python scripts/generate.py
+      - run: python scripts/build.py
         env:
-          PROFILE_USER: arshadwork-009
+          PROFILE_USER: ${{ github.repository_owner }} # whoever owns this repo, so a copy shows its own owner's stats
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Refresh README.md from the active theme's snippet
+        run: |
+          for t in themes/*/; do
+            n=$(basename "$t")
+            if grep -q "themes/$n/assets" README.md; then cp "$t/snippet.md" README.md; break; fi
+          done
       - name: Commit if changed
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add assets profile-3d-contrib
+          git add README.md themes
           git diff --cached --quiet || git commit -m "chore: update profile visuals" && git push

@@ -1,97 +1,17 @@
-"""Generate the profile README visuals from live GitHub data (stdlib only).
+"""Default theme (trainer card): writes assets/*.svg and snippet.md into this folder.
 
-Writes (relative to the repo root):
-  profile-3d-contrib/profile-night-green.svg   isometric contribution city
-  assets/dashboard.svg                         trainer card + stats + streak + languages
-  assets/projects.svg                          project cards
-
-Env: PROFILE_USER (default arshadwork-009), GITHUB_TOKEN (optional, raises API rate limit).
+snippet.md is the paste-ready README for the repo root. Run: PROFILE_USER=you python themes/default/generate.py
 """
-import base64, json, math, os, re, textwrap, urllib.request
+import math, re, sys, textwrap
 from datetime import date, datetime, timezone
 from html import escape as esc
 from pathlib import Path
 
-USER = os.environ.get("PROFILE_USER", "arshadwork-009")
-TAGLINE = "Backend Developer · Cybersecurity"
-FOCUS = ["Backend", "Cybersecurity"]  # chips in the footer
-MOOD = None  # set a fixed string (e.g. "Hunting bugs") to override the automatic, streak-based mood
-ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from profile_data import *  # shared GitHub data: USER, days, total, streak, user, repos, langs, ...
+from isocity import iso_city, CSS as CITY_CSS
 
-
-def fetch(url, api=False):
-    h = {"User-Agent": "profile-readme-generator"}
-    if api and os.environ.get("GITHUB_TOKEN"):
-        h["Authorization"] = "Bearer " + os.environ["GITHUB_TOKEN"]
-    return urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=30).read()
-
-
-def gh(path):
-    return json.loads(fetch("https://api.github.com" + path, api=True))
-
-
-# ---------- data ----------
-html = fetch(f"https://github.com/users/{USER}/contributions").decode("utf-8")
-cells = {}  # id -> [row, col, date, level, count]
-for m in re.finditer(r'<td[^>]*data-date="([^"]+)"[^>]*id="contribution-day-component-(\d+)-(\d+)"[^>]*data-level="(\d)"', html):
-    cells[f"{m[2]}-{m[3]}"] = [int(m[2]), int(m[3]), m[1], int(m[4]), 0]
-for m in re.finditer(r'<tool-tip[^>]*for="contribution-day-component-(\d+-\d+)"[^>]*>\s*([^<]*?)\s*</tool-tip>', html):
-    n = re.match(r"(\d+) contribution", m[2])
-    if m[1] in cells:
-        cells[m[1]][4] = int(n[1]) if n else 0
-days = sorted(cells.values(), key=lambda c: c[2])
-assert days, "no calendar cells parsed"
-
-total = sum(c[4] for c in days)
-active = sum(1 for c in days if c[4])
-best = max(days, key=lambda c: c[4])
-maxc = max(best[4], 1)
-d0, d1 = date.fromisoformat(days[0][2]), date.fromisoformat(days[-1][2])
-bd = date.fromisoformat(best[2])
-
-
-def fd(s):
-    d = date.fromisoformat(s)
-    return f"{d:%b} {d.day}"
-
-
-rev = days[::-1]
-if rev[0][4] == 0:
-    rev = rev[1:]  # today isn't over yet; GitHub doesn't break the streak for it
-streak = 0
-for c in rev:
-    if c[4] == 0:
-        break
-    streak += 1
-longest = run = 0
-ls_ = le_ = rs = None
-for c in days:
-    if c[4]:
-        if run == 0:
-            rs = c[2]
-        run += 1
-        if run > longest:
-            longest, ls_, le_ = run, rs, c[2]
-    else:
-        run = 0
-cur_range = f"{fd(rev[streak-1][2])} - {fd(rev[0][2])}" if streak else "no active streak"
-long_range = f"{fd(ls_)} - {fd(le_)}" if longest else "-"
-
-user = gh(f"/users/{USER}")
-repos = [r for r in gh(f"/users/{USER}/repos?per_page=100&sort=pushed") if not r["fork"]]
-stars = sum(r["stargazers_count"] for r in repos)
-joined = date.fromisoformat(user["created_at"][:10])
-avatar = base64.b64encode(fetch(user["avatar_url"] + ("&" if "?" in user["avatar_url"] else "?") + "s=240")).decode()
-
-langs = {}  # language -> bytes across all non-fork public repos
-for r in repos:
-    try:
-        for name, b in gh(f"/repos/{r['full_name']}/languages").items():
-            langs[name] = langs.get(name, 0) + b
-    except Exception:
-        pass  # one repo failing shouldn't blank the card
-lang_total = sum(langs.values())
-lang_rows = sorted(langs.items(), key=lambda kv: -kv[1])
+ROOT = Path(__file__).resolve().parent  # outputs land in this theme's folder
 
 # ---------- shared style ----------
 SANS = "'Segoe UI',Inter,system-ui,-apple-system,sans-serif"
@@ -125,34 +45,18 @@ def write(path, text):
 
 
 # ---------- glass city ----------
-def poly(pts, fill):
-    return '<polygon points="%s" fill="%s"/>' % (" ".join("%.1f,%.1f" % p for p in pts), fill)
-
-
-S, C30 = 15.0, math.cos(math.radians(30))
-P = lambda x, y, z: ((x + y) * C30 * S, (y - x) * 0.5 * S - z)
-shapes, xs, ys = [], [], []
-for r, c, d, lvl, n in sorted(days, key=lambda t: (-t[1], t[0])):  # far blocks first
-    h = 1.5 if n == 0 else 3 + 80 * (n / maxc) ** 0.7
-    top, left, right = PAL[lvl]
-    x, y = c, r
-    t = [P(x, y, h), P(x + 1, y, h), P(x + 1, y + 1, h), P(x, y + 1, h)]
-    lf = [P(x, y, 0), P(x, y + 1, 0), P(x, y + 1, h), P(x, y, h)]
-    rt = [P(x, y + 1, 0), P(x + 1, y + 1, 0), P(x + 1, y + 1, h), P(x, y + 1, h)]
-    shapes += [poly(lf, left), poly(rt, right), poly(t, top)]
-    for p in t + lf + rt:
-        xs.append(p[0]); ys.append(p[1])
-PAD = 44
-W, H = max(xs) - min(xs) + PAD * 2, max(ys) - min(ys) + PAD * 2
-ox, oy = PAD - min(xs), PAD - min(ys)
+HIGH = ("#fde68a", "#f59e0b", "#b45309")  # busy days stand out from the teal ramp
+shapes, W, H, ox, oy, high_min = iso_city(days, maxc, PAL, HIGH)
 legend = "".join(f'<rect x="{W-220+i*18:.0f}" y="{H-62:.0f}" width="12" height="12" rx="3" fill="{PAL[i][0]}"/>' for i in range(5))
-write("profile-3d-contrib/profile-night-green.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.0f} {H:.0f}" width="{W:.0f}" height="{H:.0f}" role="img" aria-label="Isometric 3D contribution city for {esc(USER)}: {total} contributions, {active} active days">
+legend += f'<rect x="{W-92:.0f}" y="{H-62:.0f}" width="12" height="12" rx="3" fill="{HIGH[1]}"/><text x="{W-74:.0f}" y="{H-52:.0f}" font-size="11" fill="#94a3b8">Peak</text>'
+write("assets/city.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.0f} {H:.0f}" width="{W:.0f}" height="{H:.0f}" role="img" aria-label="Isometric 3D contribution city for {esc(USER)}: {total} contributions, {active} active days">
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a0f1a"/><stop offset="1" stop-color="#070b12"/></linearGradient>
 <radialGradient id="gb" cx="0.12" cy="0" r="0.55"><stop offset="0" stop-color="#3b82f6" stop-opacity="0.45"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></radialGradient>
 <radialGradient id="gg" cx="0.9" cy="0.25" r="0.5"><stop offset="0" stop-color="#22c55e" stop-opacity="0.28"/><stop offset="1" stop-color="#22c55e" stop-opacity="0"/></radialGradient>
 <radialGradient id="gp" cx="0.55" cy="1" r="0.5"><stop offset="0" stop-color="#a855f7" stop-opacity="0.3"/><stop offset="1" stop-color="#a855f7" stop-opacity="0"/></radialGradient>
 </defs>
+<style>{CITY_CSS}</style>
 <rect x="0.5" y="0.5" width="{W-1:.0f}" height="{H-1:.0f}" rx="22" fill="url(#bg)"/>
 <rect x="0.5" y="0.5" width="{W-1:.0f}" height="{H-1:.0f}" rx="22" fill="url(#gb)"/>
 <rect x="0.5" y="0.5" width="{W-1:.0f}" height="{H-1:.0f}" rx="22" fill="url(#gg)"/>
@@ -175,20 +79,14 @@ write("profile-3d-contrib/profile-night-green.svg", f'''<svg xmlns="http://www.w
 ''')
 
 # ---------- trainer card (rank, move names and colour follow the stats) ----------
-RANKS = [  # (min total contributions, title, rim gradient stops, accent)
-    (0, "Rookie Trainer", ("#e2e8f0", "#64748b", "#94a3b8"), "#cbd5e1"),
-    (100, "Basic Trainer", ("#99f6e4", "#0f766e", "#5eead4"), "#5eead4"),
-    (500, "Ace Trainer", ("#a5f3fc", "#0891b2", "#67e8f9"), "#67e8f9"),
-    (1500, "Elite Trainer", ("#e9d5ff", "#7e22ce", "#c084fc"), "#c084fc"),
-    (3000, "Champion", ("#fde68a", "#b45309", "#fbbf24"), "#fbbf24"),
+RIMS = [  # (rim gradient stops, accent) per rank; titles and thresholds live in profile_data.RANKS
+    (("#e2e8f0", "#64748b", "#94a3b8"), "#cbd5e1"),
+    (("#99f6e4", "#0f766e", "#5eead4"), "#5eead4"),
+    (("#a5f3fc", "#0891b2", "#67e8f9"), "#67e8f9"),
+    (("#e9d5ff", "#7e22ce", "#c084fc"), "#c084fc"),
+    (("#fde68a", "#b45309", "#fbbf24"), "#fbbf24"),
 ]
-ri = max(i for i, r in enumerate(RANKS) if total >= r[0])
-_, rank_name, rim_stops, ACC = RANKS[ri]
-next_txt = f"Next rank · {RANKS[ri+1][0]:,}" if ri + 1 < len(RANKS) else "Max rank"
-
-
-def pick(v, limits, names):  # names has one more entry than limits
-    return names[sum(v >= lim for lim in limits)]
+rim_stops, ACC = RIMS[rank_i]
 
 
 moves = [
@@ -196,7 +94,6 @@ moves = [
     (pick(active, [30, 100], ["Warm Up", "Daily Grind", "Iron Routine"]), str(active), "Active days in the last year."),
     (pick(streak, [3, 7], ["Streak Starter", "Streak Keeper", "Streak Master"]), str(streak), f"Current streak in days. Total: {total:,} commits."),
 ]
-mood = MOOD or pick(streak, [1, 3, 7], ["Recharging", "Warming up", "Locked in", "In the zone"])
 mood_t = mood.upper()
 mood_w = 24 + 6.9 * len(mood_t)  # pill width, right edge aligned with the art box at x=332
 mood_l = 332 - mood_w
@@ -234,7 +131,7 @@ card = f'''<defs>
 <text x="180" y="298" font-size="10.5" font-style="italic" fill="#cbd5e1" text-anchor="middle">{esc(TAGLINE)} · LV {active}</text>
 {rows}
 <line x1="28" y1="480" x2="332" y2="480" stroke="#2dd4bf" stroke-opacity="0.5"/>
-<text x="28" y="498" font-size="10.5" fill="#94a3b8">weakness  <tspan fill="#f8fafc">unvalidated input ×2</tspan></text>
+<text x="28" y="498" font-size="10.5" fill="#94a3b8">weakness  <tspan fill="#f8fafc">{esc(CFG.get("weakness", "none found"))}</tspan></text>
 <text x="332" y="498" font-size="10.5" fill="#94a3b8" text-anchor="end">retreat  <tspan fill="#f8fafc">0</tspan></text>
 <text x="28" y="516" font-size="10" fill="#64748b">Repos {user["public_repos"]} · Followers {user["followers"]} · Stars {stars}</text>
 <text x="332" y="516" font-size="10" fill="#64748b" text-anchor="end">{next_txt}</text>
@@ -305,13 +202,7 @@ write("assets/dashboard.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBo
 
 
 # ---------- projects: favourites first, then by stars; up to 6 cards, "+N more" beyond that ----------
-FAVORITES = []  # repo names to always feature first (or just add the "featured" topic to a repo on GitHub)
-FEATURED_TOPIC = "featured"
 STAR = "0,-7 2,-2.4 7,-2.2 3.1,0.9 4.3,5.7 0,3 -4.3,5.7 -3.1,0.9 -7,-2.2 -2,-2.4"
-
-
-def is_fav(r):
-    return r["name"] in FAVORITES or FEATURED_TOPIC in (r.get("topics") or [])
 
 
 def project(x, y, i, item):
@@ -404,5 +295,27 @@ write("assets/footer.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="
 <text x="736" y="109" font-size="10" fill="#64748b" text-anchor="end">Generated from live GitHub data · GitHub Actions</text>
 </g>
 </svg>
+''')
+write("snippet.md", f'''<p align="center">
+  <img src="./themes/default/assets/dashboard.svg" alt="Trainer card with stats, streak and language stack for {esc(USER)}" width="100%" />
+</p>
+
+<br/>
+
+<p align="center">
+  <img src="./themes/default/assets/city.svg" alt="3D contribution graph" width="100%" />
+</p>
+
+<br/>
+
+<p align="center">
+  <a href="https://github.com/{esc(USER)}?tab=repositories"><img src="./themes/default/assets/projects.svg" alt="Projects by {esc(USER)}" width="100%" /></a>
+</p>
+
+<br/>
+
+<p align="center">
+  <a href="https://github.com/{esc(USER)}"><img src="./themes/default/assets/footer.svg" alt="{esc(USER)} · {esc(TAGLINE)}" width="100%" /></a>
+</p>
 ''')
 print(f"{USER}: total={total} rank={rank_name} active={active} streak={streak} repos={len(repos)} langs={len(lang_rows)}")

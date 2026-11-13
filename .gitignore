@@ -1,0 +1,5 @@
+# local previews (python scripts/preview.py) and tooling leftovers
+preview*.html
+.playwright-mcp/
+__pycache__/
+*.pyc
