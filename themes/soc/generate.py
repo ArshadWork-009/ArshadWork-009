@@ -24,8 +24,7 @@ def sev(n):  # 0 none, 1 low .. 4 critical (critical = the shared "busy day" thr
 
 
 def status(r):  # (label, colour) of a repo: used by the dashboard's asset panel and the feed, so they always agree
-    recent = (now.date() - date.fromisoformat(r["pushed_at"][:10])).days <= 30
-    return ("FEATURED", SEVC[2]) if is_fav(r) else ("ACTIVE", SEVC[1]) if recent else ("IDLE", DM)
+    return {"featured": ("FEATURED", SEVC[2]), "active": ("ACTIVE", SEVC[1]), "idle": ("IDLE", DM)}[repo_status(r)]
 
 
 def panel(x, y, w, h, title, inner):

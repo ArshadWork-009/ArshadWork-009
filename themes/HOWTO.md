@@ -8,6 +8,16 @@ One folder per theme. Each holds:
 | `assets/*.svg` | The generated images (committed, refreshed every 3 hours by the workflow) |
 | `snippet.md` | The paste-ready README for the repo root. Image paths are root-relative (`./themes/<name>/assets/...`) |
 
+## Available themes
+
+| Theme | Looks like |
+|-------|-----------|
+| `default` | a trainer card with rank, streak and language stack, plus a 3D contribution city |
+| `trading` | candlestick chart of your weekly commits, order flow, watchlist |
+| `terminal` | zsh windows: `whoami`, `git shortlog`, an `nmap`-style language table, a heatmap |
+| `soc` | a security-operations console: activity gauge, alert severity, alert calendar |
+| `blueprint` | a technical drawing on blue grid paper: dimension lines, a hatch-pattern heatmap, a repo system diagram and a title block |
+
 ## Use a theme
 Copy `themes/<name>/snippet.md` into the root `README.md`, or run **Actions -> Switch README theme** and type the folder name.
 

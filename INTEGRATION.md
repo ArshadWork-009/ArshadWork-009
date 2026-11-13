@@ -1,7 +1,7 @@
 # Use this on your own GitHub profile
 
-This repo turns your live GitHub activity into a profile README with four switchable themes
-(**default**, **trading**, **terminal**, **soc**). A GitHub Action rebuilds the images every 3 hours,
+This repo turns your live GitHub activity into a profile README with five switchable themes
+(**default**, **trading**, **terminal**, **soc**, **blueprint**). A GitHub Action rebuilds the images every 3 hours,
 so the stats always belong to whoever owns the repo. Nothing here is tied to the original author.
 
 You need: a GitHub account and about 10 minutes. You do not need to install anything unless you want to preview locally.
@@ -84,11 +84,12 @@ Every theme lives in its own folder under `themes/`.
 | `trading` | candlestick chart of your weekly commits, order flow, watchlist |
 | `terminal` | zsh windows: `whoami`, `git shortlog`, an `nmap`-style language table, a heatmap |
 | `soc` | a security-operations console: activity gauge, alert severity, alert calendar |
+| `blueprint` | a technical drawing on blue grid paper, in 4 sheets: an overview with dimension lines, a hatch-pattern heatmap, a repo system diagram and a title block |
 
 **Option A, from the website:**
 
 1. **Actions** tab -> **Switch README theme** -> **Run workflow**.
-2. Type a theme folder name, for example `terminal`, and run it.
+2. Type a theme folder name, for example `terminal` or `blueprint`, and run it.
 3. After about 20 seconds your profile page shows that theme.
 
 **Option B, by hand:** copy the theme's `snippet.md` over `README.md` and push.
@@ -99,6 +100,8 @@ git add README.md
 git commit -m "Use the terminal theme"
 git push
 ```
+
+Swap `terminal` for any folder name under `themes/`. For the blueprint theme (4 sheets) that is `cp themes/blueprint/snippet.md README.md`.
 
 The 3-hourly build notices which theme `README.md` is using and keeps it up to date, so you can switch whenever you like.
 
@@ -164,10 +167,11 @@ Details are in [`themes/HOWTO.md`](themes/HOWTO.md).
 profile.json              your text: tagline, focus, weakness
 scripts/profile_data.py   fetches your GitHub data once, shared by every theme
 scripts/build.py          runs every themes/*/generate.py
-themes/<name>/
+themes/<name>/            one folder per theme: default, trading, terminal, soc, blueprint
   generate.py             draws that theme
   assets/*.svg            the generated images (committed by the Action)
   snippet.md              the README for that theme, ready to paste
+themes/blueprint/assets/  e.g. its 4 sheets: overview, hatchmap, diagram, titleblock
 README.md                 the active theme's snippet; this is what your profile shows
 .github/workflows/        update-profile.yml (every 3h) and switch-theme.yml (manual)
 ```

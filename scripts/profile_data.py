@@ -110,6 +110,12 @@ mood = pick(streak, [1, 3, 7], ["Recharging", "Warming up", "Locked in", "In the
 high_min = max(8, 0.5 * maxc)  # a day at or above this many commits is "busy" in every theme (below 8, nothing is, however quiet the year)
 is_fav = lambda r: "featured" in (r.get("topics") or [])  # give a repo the "featured" topic on GitHub to list it first
 
+
+def repo_status(r):  # "featured", "active" (pushed in the last 30 days) or "idle"; each theme decides how to draw it
+    if is_fav(r):
+        return "featured"
+    return "active" if (now.date() - date.fromisoformat(r["pushed_at"][:10])).days <= 30 else "idle"
+
 WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 wd, weeks = [0] * 7, {}
 for c in days:
