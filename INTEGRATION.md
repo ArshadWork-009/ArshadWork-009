@@ -89,7 +89,7 @@ Every theme lives in its own folder under `themes/`.
 **Option A, from the website:**
 
 1. **Actions** tab -> **Switch README theme** -> **Run workflow**.
-2. Type a theme folder name, for example `terminal` or `blueprint`, and run it.
+2. Pick a theme from the **theme** drop-down (default, trading, terminal, soc or blueprint) and run it.
 3. After about 20 seconds your profile page shows that theme.
 
 **Option B, by hand:** copy the theme's `snippet.md` over `README.md` and push.
@@ -149,7 +149,7 @@ The Action does not have this problem: it uses its own token.
 
 ## Optional: make your own theme
 
-Copy a theme folder, rename it, and edit its `generate.py`. Nothing needs registering.
+Copy a theme folder, rename it, and edit its `generate.py`. The build picks it up by itself. To make it selectable in the **Switch README theme** drop-down, add its name to the `options:` list in `.github/workflows/switch-theme.yml`.
 
 ```bash
 cp -r themes/terminal themes/mytheme
@@ -228,5 +228,6 @@ Only people with write access to your repo can run it, so visitors cannot change
 | Stats look low | Private-repo work only counts if you tick **Include private contributions on my profile** in your profile settings, and the numbers are still read from your public profile. |
 | `git push` is rejected | The Action committed while you were editing. Run `git pull --rebase`, then push again. |
 | Images are broken inside `themes/<name>/snippet.md` on GitHub | Expected. Its image paths start at the repo root, so they only work once pasted into the root `README.md`. |
-| Switch workflow says `no such theme` | The name must match a folder in `themes/` exactly (lowercase). |
+| Switch workflow says `no such theme` | The drop-down lists a theme whose folder is missing. Make the `options:` list in `switch-theme.yml` match the folders in `themes/`. |
+| My new theme is not in the Switch drop-down | Add its name to the `options:` list in `.github/workflows/switch-theme.yml` and push. |
 | I want different colours | Edit the colour constants at the top of `themes/<name>/generate.py` and push. The Action rebuilds. |

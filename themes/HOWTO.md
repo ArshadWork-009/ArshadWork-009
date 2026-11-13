@@ -19,7 +19,7 @@ One folder per theme. Each holds:
 | `blueprint` | a technical drawing on blue grid paper: dimension lines, a hatch-pattern heatmap, a repo system diagram and a title block |
 
 ## Use a theme
-Copy `themes/<name>/snippet.md` into the root `README.md`, or run **Actions -> Switch README theme** and type the folder name.
+Copy `themes/<name>/snippet.md` into the root `README.md`, or run **Actions -> Switch README theme** and pick the theme from the drop-down.
 
 ## Add a theme
 1. Copy a folder: `themes/trading` -> `themes/my-theme`.
@@ -27,7 +27,7 @@ Copy `themes/<name>/snippet.md` into the root `README.md`, or run **Actions -> S
 3. Make sure it writes `assets/*.svg` and `snippet.md` with `./themes/my-theme/assets/...` paths.
 4. `PROFILE_USER=you python scripts/build.py` builds every theme; `python scripts/preview.py` makes the local `preview.html` (git-ignored) with a button per theme.
 
-Nothing else needs registering: the workflows pick up every `themes/*/` folder.
+The build picks up every `themes/*/` folder by itself. To make a new theme selectable in the **Switch README theme** drop-down, also add its name to the `options:` list in `.github/workflows/switch-theme.yml`.
 
 ## Personal text
 `profile.json` at the repo root: `tagline`, `focus` (footer chips), `weakness`. The tagline falls back to your GitHub bio.

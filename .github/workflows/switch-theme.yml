@@ -4,8 +4,9 @@ on:
   workflow_dispatch: # Actions tab -> Run workflow (only repo writers can run it)
     inputs:
       theme:
-        description: "Theme folder name under themes/: default, trading, terminal, soc or blueprint"
-        type: string
+        description: "Theme to show on the profile"
+        type: choice
+        options: [default, trading, terminal, soc, blueprint] # one per folder under themes/; add a new theme's name here
         default: trading
 
 permissions:
