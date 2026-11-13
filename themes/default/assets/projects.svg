@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 170" width="760" height="170" role="img" aria-label="Projects: 1 public, 0 featured">
 <defs><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#99f6e4"/><stop offset="0.5" stop-color="#0f766e"/><stop offset="1" stop-color="#5eead4"/></linearGradient></defs>
-<g font-family="'Segoe UI',Inter,system-ui,-apple-system,sans-serif">
+<g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif">
 <g transform="translate(0,0)"><rect x="1" y="1" width="238" height="168" rx="16" fill="url(#rim)"/><rect x="3" y="3" width="234" height="164" rx="14" fill="#0d1b1a"/>
 <text x="20" y="32" font-size="10" font-weight="700" letter-spacing="2" fill="#94a3b8">PROJECT 01</text>
 <text x="20" y="62" font-size="19" font-weight="800" fill="#f8fafc">ArshadWork-009</text>

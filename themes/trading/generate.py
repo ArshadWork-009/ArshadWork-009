@@ -3,8 +3,8 @@
 Weekly candles, volume, order flow, volume skyline, watchlist, status footer.
 snippet.md is the paste-ready README for the repo root. Run: PROFILE_USER=you python themes/trading/generate.py
 """
-import math, re, sys, textwrap
-from datetime import date, datetime, timezone
+import math, re, sys
+from datetime import date
 from html import escape as esc
 from pathlib import Path
 
@@ -12,42 +12,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from profile_data import *  # shared GitHub data: USER, days, total, streak, user, repos, langs, ...
 from isocity import iso_city, CSS as CITY_CSS
 
-ROOT = Path(__file__).resolve().parent  # outputs land in this theme's folder
 
 UP, DN, GOLD, BG, PANEL, LINE, DIM, TXT = "#0ecb81", "#f6465d", "#f0b90b", "#0b0e11", "#12161c", "#1e2329", "#848e9c", "#eaecef"
-SANS = "'Segoe UI',Inter,system-ui,-apple-system,sans-serif"
-MONO = "'JetBrains Mono','SF Mono',Consolas,'Courier New',monospace"
-LANG_COLORS = {"JavaScript": "#f1e05a", "TypeScript": "#3178c6", "Python": "#3572a5", "HTML": "#e34c26", "CSS": "#8b5cf6",
-               "Java": "#b07219", "C++": "#f34b7d", "C": "#8b9aa8", "C#": "#43a047", "Go": "#00add8", "Rust": "#dea584",
-               "PHP": "#4f5d95", "Ruby": "#cc342d", "Swift": "#f05138", "Kotlin": "#a97bff", "Dart": "#00b4ab", "Shell": "#89e051"}
-
-
-def write(path, text):
-    p = ROOT / path
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text, encoding="utf-8")
-
-
 # weekly candles from the real daily counts: open = first day, close = last day, high/low = busiest/quietest day, volume = week total
-weeks = {}
-for c in days:
-    weeks.setdefault(c[1], []).append(c[4])
-candles = [(w[0], max(w), min(w), w[-1], sum(w)) for _, w in sorted(weeks.items())]
-vols = [c[4] for c in candles]
-last4, prev4 = sum(vols[-4:]), sum(vols[-8:-4])
-delta = (last4 / prev4 - 1) * 100 if prev4 else None  # 4-week volume change
-dir_up = delta is None or delta >= 0
-dtxt = f"{'▲' if dir_up else '▼'} {delta:+.1f}%" if delta is not None else "▲ new"
+candles = [(w[0], max(w), min(w), w[-1], sum(w)) for w in wk]
+dir_up = chg is None or chg >= 0
+dtxt = f"{'▲' if dir_up else '▼'} {chg:+.1f}%" if chg is not None else "▲ new"
 dcol = UP if dir_up else DN
-now = datetime.now(timezone.utc)
 
 # ---------- dashboard: terminal layout (symbol header, OHLC readout, candles + right price axis, volume, side panel, tape) ----------
 # the side panel is laid out first; its bottom edge (PB) then sets the chart height so both columns end together
-WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-wd = [0] * 7
-for c in days:
-    wd[c[0]] += c[4]  # row 0 = Sunday in GitHub's calendar
-wmax = max(wd) or 1
 hdr = lambda yy, t, r="": (f'<text x="580" y="{yy}" font-size="9.5" font-weight="700" letter-spacing="2" fill="{DIM}">{t}</text>'
                            + (f'<text x="730" y="{yy}" font-size="8.5" fill="{DIM}" text-anchor="end">{r}</text>' if r else ""))
 
@@ -163,7 +137,7 @@ write("assets/dashboard.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBo
 <rect x="1" y="1" width="758" height="{HH - 2}" rx="14" fill="{BG}" stroke="{LINE}"/><rect x="1" y="1" width="758" height="{HH - 2}" rx="14" fill="url(#glow)"/>
 <g font-family="{SANS}">
 <circle cx="40" cy="32" r="19" fill="none" stroke="{UP}" stroke-width="2"/>
-<image href="data:image/jpeg;base64,{avatar}" x="24" y="16" width="32" height="32" clip-path="url(#av)" preserveAspectRatio="xMidYMid slice"/>
+<image href="data:image/jpeg;base64,{avatar()}" x="24" y="16" width="32" height="32" clip-path="url(#av)" preserveAspectRatio="xMidYMid slice"/>
 <text x="70" y="29" font-size="15" font-weight="800" fill="{TXT}">{esc(USER.upper())}<tspan fill="{DIM}" font-weight="600">/COMMITS</tspan></text>
 <circle class="pulse" cx="75" cy="43" r="3" fill="{UP}"/><circle cx="75" cy="43" r="3" fill="{UP}"/>
 <text x="84" y="46.5" font-size="10.5" fill="{DIM}">{esc(TAGLINE)} · 1W</text>
@@ -201,7 +175,7 @@ write("assets/dashboard.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBo
 PAL = {0: ("#161c22", "#11161b", "#0d1115"), 1: ("#0a4d36", "#073b29", "#052c1f"), 2: ("#0b8a5f", "#086a49", "#064f37"),
        3: ("#0ecb81", "#0a9a62", "#077248"), 4: ("#6af0b8", "#3fbf8a", "#2a8f66")}
 HIGH = ("#f8d35e", GOLD, "#b88a00")  # busy days (and the all-time high) in gold
-shapes, W, H, ox, oy, high_min = iso_city(days, maxc, PAL, HIGH)
+shapes, W, H, ox, oy = iso_city(days, maxc, PAL, HIGH, high_min)
 legend = "".join(f'<rect x="{W - 262 + i * 18:.0f}" y="{H - 62:.0f}" width="12" height="12" rx="3" fill="{PAL[i][0]}"/>' for i in range(5))
 legend += f'<rect x="{W - 92:.0f}" y="{H - 62:.0f}" width="12" height="12" rx="3" fill="{GOLD}"/><text x="{W - 74:.0f}" y="{H - 52:.0f}" font-size="11" fill="{DIM}">Peak</text>'
 chips, cx_ = "", 44
@@ -233,9 +207,6 @@ write("assets/city.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 
 ''')
 
 # ---------- projects: watchlist table ----------
-pool = [r for r in repos if not r["archived"]]
-pool = [r for r in pool if r["name"].lower() != USER.lower()] or pool  # profile repo only if it's all there is
-ranked = sorted(pool, key=lambda r: (not is_fav(r), -r["stargazers_count"]))  # featured first, then stars; ties keep latest-push order
 STAR = "0,-7 2,-2.4 7,-2.2 3.1,0.9 4.3,5.7 0,3 -4.3,5.7 -3.1,0.9 -7,-2.2 -2,-2.4"
 slots = ranked[:5]
 slots += [None] * (3 - len(slots))
@@ -299,7 +270,7 @@ write("assets/footer.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="
 <rect x="1" y="1" width="758" height="122" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="24" y="1.5" width="712" height="2" rx="1" fill="url(#bar)" fill-opacity="0.8"/>
 <circle cx="52" cy="50" r="26" fill="none" stroke="{UP}" stroke-width="2.5"/>
-<image href="data:image/jpeg;base64,{avatar}" x="30" y="28" width="44" height="44" clip-path="url(#fav)" preserveAspectRatio="xMidYMid slice"/>
+<image href="data:image/jpeg;base64,{avatar()}" x="30" y="28" width="44" height="44" clip-path="url(#fav)" preserveAspectRatio="xMidYMid slice"/>
 <g font-family="{SANS}">
 <text x="92" y="38" font-size="17" font-weight="800" fill="{TXT}">{esc(USER)}</text>
 {chips}
@@ -336,4 +307,4 @@ write("snippet.md", f'''<p align="center">
   <a href="https://github.com/{esc(USER)}"><img src="./themes/trading/assets/footer.svg" alt="{esc(USER)} · {esc(TAGLINE)}" width="100%" /></a>
 </p>
 ''')
-print(f"{USER}: total={total} active={active} streak={streak} weeks={N} delta={delta} repos={len(repos)} langs={len(lang_rows)}")
+print(f"{USER}: total={total} active={active} streak={streak} weeks={N} delta={chg} repos={len(repos)} langs={len(lang_rows)}")

@@ -2,8 +2,7 @@
 
 snippet.md is the paste-ready README for the repo root. Run: PROFILE_USER=you python themes/default/generate.py
 """
-import math, re, sys, textwrap
-from datetime import date, datetime, timezone
+import math, sys, textwrap
 from html import escape as esc
 from pathlib import Path
 
@@ -11,11 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from profile_data import *  # shared GitHub data: USER, days, total, streak, user, repos, langs, ...
 from isocity import iso_city, CSS as CITY_CSS
 
-ROOT = Path(__file__).resolve().parent  # outputs land in this theme's folder
 
 # ---------- shared style ----------
-SANS = "'Segoe UI',Inter,system-ui,-apple-system,sans-serif"
-MONO = "'JetBrains Mono','SF Mono',Consolas,'Courier New',monospace"
 RIM = '<linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#99f6e4"/><stop offset="0.5" stop-color="#0f766e"/><stop offset="1" stop-color="#5eead4"/></linearGradient>'
 PAL = {  # contribution level: (top, left, right)
     0: ("#15302e", "#0f2321", "#0b1a19"),
@@ -23,12 +19,6 @@ PAL = {  # contribution level: (top, left, right)
     2: ("#14b8a6", "#0f8f82", "#0b6b61"),
     3: ("#2dd4bf", "#22a898", "#187d71"),
     4: ("#99f6e4", "#5fc4b2", "#3f9485"),
-}
-LANG_COLORS = {
-    "JavaScript": "#f1e05a", "TypeScript": "#3178c6", "Python": "#3572a5", "HTML": "#e34c26", "CSS": "#8b5cf6",
-    "Java": "#b07219", "C++": "#f34b7d", "C": "#8b9aa8", "C#": "#43a047", "Go": "#00add8", "Rust": "#dea584",
-    "PHP": "#4f5d95", "Ruby": "#cc342d", "Swift": "#f05138", "Kotlin": "#a97bff", "Dart": "#00b4ab",
-    "Shell": "#89e051", "Vue": "#41b883", "SCSS": "#c6538c",
 }
 FALLBACK = ["#2dd4bf", "#14b8a6", "#5eead4", "#0f766e", "#99f6e4"]
 
@@ -38,15 +28,9 @@ def box(x, y, w, h, inner):
             f'<rect x="3" y="3" width="{w-6}" height="{h-6}" rx="14" fill="#0d1b1a"/>{inner}</g>')
 
 
-def write(path, text):
-    p = ROOT / path
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text, encoding="utf-8")
-
-
 # ---------- glass city ----------
 HIGH = ("#fde68a", "#f59e0b", "#b45309")  # busy days stand out from the teal ramp
-shapes, W, H, ox, oy, high_min = iso_city(days, maxc, PAL, HIGH)
+shapes, W, H, ox, oy = iso_city(days, maxc, PAL, HIGH, high_min)
 legend = "".join(f'<rect x="{W-220+i*18:.0f}" y="{H-62:.0f}" width="12" height="12" rx="3" fill="{PAL[i][0]}"/>' for i in range(5))
 legend += f'<rect x="{W-92:.0f}" y="{H-62:.0f}" width="12" height="12" rx="3" fill="{HIGH[1]}"/><text x="{W-74:.0f}" y="{H-52:.0f}" font-size="11" fill="#94a3b8">Peak</text>'
 write("assets/city.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.0f} {H:.0f}" width="{W:.0f}" height="{H:.0f}" role="img" aria-label="Isometric 3D contribution city for {esc(USER)}: {total} contributions, {active} active days">
@@ -79,14 +63,16 @@ write("assets/city.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 
 ''')
 
 # ---------- trainer card (rank, move names and colour follow the stats) ----------
-RIMS = [  # (rim gradient stops, accent) per rank; titles and thresholds live in profile_data.RANKS
-    (("#e2e8f0", "#64748b", "#94a3b8"), "#cbd5e1"),
-    (("#99f6e4", "#0f766e", "#5eead4"), "#5eead4"),
-    (("#a5f3fc", "#0891b2", "#67e8f9"), "#67e8f9"),
-    (("#e9d5ff", "#7e22ce", "#c084fc"), "#c084fc"),
-    (("#fde68a", "#b45309", "#fbbf24"), "#fbbf24"),
+RANKS = [  # (min total contributions, title, rim gradient stops, accent)
+    (0, "Rookie Trainer", ("#e2e8f0", "#64748b", "#94a3b8"), "#cbd5e1"),
+    (100, "Basic Trainer", ("#99f6e4", "#0f766e", "#5eead4"), "#5eead4"),
+    (500, "Ace Trainer", ("#a5f3fc", "#0891b2", "#67e8f9"), "#67e8f9"),
+    (1500, "Elite Trainer", ("#e9d5ff", "#7e22ce", "#c084fc"), "#c084fc"),
+    (3000, "Champion", ("#fde68a", "#b45309", "#fbbf24"), "#fbbf24"),
 ]
-rim_stops, ACC = RIMS[rank_i]
+ri = max(i for i, r in enumerate(RANKS) if total >= r[0])
+_, rank_name, rim_stops, ACC = RANKS[ri]
+next_txt = f"Next rank · {RANKS[ri + 1][0]:,}" if ri + 1 < len(RANKS) else "Max rank"
 
 
 moves = [
@@ -125,7 +111,7 @@ card = f'''<defs>
 <text x="332" y="68" font-size="26" font-weight="800" fill="{ACC}" text-anchor="end">{total}</text>
 <rect x="28" y="84" width="304" height="190" rx="10" fill="url(#art)" stroke="#2dd4bf" stroke-opacity="0.6"/>
 <circle cx="180" cy="179" r="78" fill="none" stroke="#2dd4bf" stroke-opacity="0.35" stroke-width="2"/>
-<image href="data:image/jpeg;base64,{avatar}" x="110" y="109" width="140" height="140" clip-path="url(#av)" preserveAspectRatio="xMidYMid slice"/>
+<image href="data:image/jpeg;base64,{avatar()}" x="110" y="109" width="140" height="140" clip-path="url(#av)" preserveAspectRatio="xMidYMid slice"/>
 <circle cx="180" cy="179" r="70" fill="none" stroke="url(#rimc)" stroke-width="3"/>
 <rect x="28" y="284" width="304" height="20" rx="4" fill="#12302e"/>
 <text x="180" y="298" font-size="10.5" font-style="italic" fill="#cbd5e1" text-anchor="middle">{esc(TAGLINE)} · LV {active}</text>
@@ -239,9 +225,6 @@ def project(x, y, i, item):
 </g>'''
 
 
-pool = [r for r in repos if not r["archived"]]
-pool = [r for r in pool if r["name"].lower() != USER.lower()] or pool  # profile repo only if it's all there is
-ranked = sorted(pool, key=lambda r: (not is_fav(r), -r["stargazers_count"]))  # stable: ties keep latest-push order
 MAXP = 5  # only the top 5 are shown
 slots = [(r, is_fav(r)) for r in ranked[:MAXP]]
 while len(slots) < 3:
@@ -260,7 +243,6 @@ write("assets/projects.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox
 ''')
 
 # ---------- footer: identity + focus + rank on the left, refresh status on the right (date only: at most one commit a day) ----------
-now = datetime.now(timezone.utc)
 chips, cx_ = "", 92
 for label, col in [(f, "#2dd4bf") for f in FOCUS] + [(rank_name, ACC)]:
     t = label.upper()
@@ -281,7 +263,7 @@ write("assets/footer.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="
 <rect x="1" y="1" width="758" height="122" rx="16" fill="url(#rim)"/>
 <rect x="3" y="3" width="754" height="118" rx="14" fill="#0d1b1a"/>
 <circle cx="52" cy="50" r="26" fill="none" stroke="url(#rimf)" stroke-width="2.5"/>
-<image href="data:image/jpeg;base64,{avatar}" x="30" y="28" width="44" height="44" clip-path="url(#fav)" preserveAspectRatio="xMidYMid slice"/>
+<image href="data:image/jpeg;base64,{avatar()}" x="30" y="28" width="44" height="44" clip-path="url(#fav)" preserveAspectRatio="xMidYMid slice"/>
 <g font-family="{SANS}">
 <text x="92" y="38" font-size="17" font-weight="800" fill="#f8fafc">{esc(USER)}</text>
 {chips}

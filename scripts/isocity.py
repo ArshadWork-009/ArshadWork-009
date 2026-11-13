@@ -10,16 +10,24 @@ CSS = (".b{transform-box:fill-box;transform-origin:50% 100%;animation:rise .7s c
        "@media (prefers-reduced-motion:reduce){.b{animation:none}}")
 
 
-def iso_city(days, maxc, pal, high, scale=15.0, pad=44):
-    """days: [row, col, date, level, count]; pal: level -> (top, left, right) colours; high: colours for busy days.
+# flat heatmaps (terminal, soc): cells pop in as a sweep, left to right
+HEATMAP_CSS = (".h{transform-box:fill-box;transform-origin:center;animation:pop .45s cubic-bezier(.2,.8,.2,1) both}"
+               "@keyframes pop{from{transform:scale(0);opacity:0}}@media (prefers-reduced-motion:reduce){.h{animation:none}}")
 
-    Returns (shapes, W, H, ox, oy, high_min): a list of svg strings to put inside <g transform="translate(ox,oy)">,
-    the canvas size, and the contribution count from which a day counts as busy.
+
+def sweep(c, r):  # style attribute that staggers a cell by its column and row
+    return f'style="animation-delay:{c * 15 + r * 6}ms"'
+
+
+def iso_city(days, maxc, pal, high, high_min):
+    """days: [row, col, date, level, count]; pal: level -> (top, left, right) colours; high: colours for days with at least high_min commits.
+
+    Returns (shapes, W, H, ox, oy): a list of svg strings to put inside <g transform="translate(ox,oy)"> and the canvas size.
     """
+    scale, pad = 15.0, 44
     c30 = math.cos(math.radians(30))
     P = lambda x, y, z: ((x + y) * c30 * scale, (y - x) * 0.5 * scale - z)
     poly = lambda pts, fill: '<polygon points="%s" fill="%s"/>' % (" ".join("%.1f,%.1f" % p for p in pts), fill)
-    high_min = max(8, 0.5 * maxc)  # below 8 commits nothing is "busy", however quiet the rest of the year was
     shapes, xs, ys = [], [], []
     for r, c, d, lvl, n in sorted(days, key=lambda t: (-t[1], t[0])):  # far blocks first
         h = 1.5 if n == 0 else 3 + 80 * (n / maxc) ** 0.7
@@ -33,4 +41,4 @@ def iso_city(days, maxc, pal, high, scale=15.0, pad=44):
         for p in t + lf + rt:
             xs.append(p[0]); ys.append(p[1])
     W, H = max(xs) - min(xs) + pad * 2, max(ys) - min(ys) + pad * 2
-    return shapes, W, H, pad - min(xs), pad - min(ys), high_min
+    return shapes, W, H, pad - min(xs), pad - min(ys)
