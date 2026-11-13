@@ -4,7 +4,7 @@ on:
   workflow_dispatch: # Actions tab -> Run workflow (only repo writers can run it)
     inputs:
       theme:
-        description: "Theme folder name under themes/ (e.g. default, trading)"
+        description: "Theme folder name under themes/: default, trading, terminal, soc or blueprint"
         type: string
         default: trading
 
