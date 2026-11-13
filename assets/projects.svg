@@ -7,7 +7,7 @@
 <text x="20" y="88" font-size="12" fill="#94a3b8">My GitHub profile</text>
 <text x="20" y="106" font-size="12" fill="#94a3b8"></text>
 <line x1="20" y1="124" x2="220" y2="124" stroke="#134e4a"/>
-<circle cx="26" cy="144" r="5" fill="#64748b"/><text x="38" y="148" font-size="11" fill="#cbd5e1">Public</text><polygon transform="translate(188,144) scale(0.8)" points="0,-7 2,-2.4 7,-2.2 3.1,0.9 4.3,5.7 0,3 -4.3,5.7 -3.1,0.9 -7,-2.2 -2,-2.4" fill="#94a3b8"/><text x="220" y="148" font-size="11" fill="#cbd5e1" text-anchor="end">0</text>
+<circle cx="26" cy="144" r="5" fill="#3572a5"/><text x="38" y="148" font-size="11" fill="#cbd5e1">Python</text><polygon transform="translate(188,144) scale(0.8)" points="0,-7 2,-2.4 7,-2.2 3.1,0.9 4.3,5.7 0,3 -4.3,5.7 -3.1,0.9 -7,-2.2 -2,-2.4" fill="#94a3b8"/><text x="220" y="148" font-size="11" fill="#cbd5e1" text-anchor="end">0</text>
 </g>
 <g transform="translate(260,0)"><rect x="1" y="1" width="238" height="168" rx="16" fill="#0b1514" stroke="#134e4a" stroke-width="2" stroke-dasharray="6 5"/>
 <text x="20" y="32" font-size="10" font-weight="700" letter-spacing="2" fill="#94a3b8">PROJECT 02</text>
