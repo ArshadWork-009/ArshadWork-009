@@ -13,8 +13,6 @@ from profile_data import *  # shared GitHub data: USER, days, total, streak, use
 from isocity import iso_city, CSS as CITY_CSS
 
 ROOT = Path(__file__).resolve().parent  # outputs land in this theme's folder
-RANK_TITLES = ["Rookie Trader", "Day Trader", "Swing Trader", "Portfolio Manager", "Market Maker"]  # same thresholds as profile_data.RANKS, trading names
-rank_name = RANK_TITLES[rank_i]
 
 UP, DN, GOLD, BG, PANEL, LINE, DIM, TXT = "#0ecb81", "#f6465d", "#f0b90b", "#0b0e11", "#12161c", "#1e2329", "#848e9c", "#eaecef"
 SANS = "'Segoe UI',Inter,system-ui,-apple-system,sans-serif"
@@ -66,14 +64,7 @@ for k, v, c, sub in rows:
     py += 31 if sub else 22
     panel += f'<line x1="580" x2="730" y1="{py - 14}" y2="{py - 14}" stroke="{LINE}"/>'
 
-cur_min = RANKS[rank_i][0]
-nxt = RANKS[rank_i + 1][0] if rank_i + 1 < len(RANKS) else None
-frac = min(1, (total - cur_min) / (nxt - cur_min)) if nxt else 1
-panel += (f'<text x="580" y="{py}" font-size="10.5" font-weight="800" fill="{GOLD}">{esc(rank_name)}</text>'
-          f'<text x="730" y="{py}" font-size="9" fill="{DIM}" text-anchor="end" font-family="{MONO}">{f"next {nxt:,}" if nxt else "max rank"}</text>'
-          f'<rect x="580" y="{py + 7}" width="150" height="5" rx="2.5" fill="{LINE}"/><rect x="580" y="{py + 7}" width="{max(3, 150 * frac):.0f}" height="5" rx="2.5" fill="{GOLD}"/>')
-
-oy = py + 40
+oy = py + 14
 panel += hdr(oy, "ORDER FLOW", "by weekday") + "".join(
     f'<text x="580" y="{oy + 20 + i * 15}" font-size="10" fill="{DIM}">{n}</text>'
     f'<rect x="612" y="{oy + 13 + i * 15}" width="84" height="7" rx="2" fill="{LINE}"/>'
@@ -144,20 +135,17 @@ hstats = "".join(
     f'<text x="{x}" y="27" font-size="8.5" font-weight="700" letter-spacing="1" fill="{DIM}">{k}</text><text x="{x}" y="45" font-size="12.5" font-weight="700" fill="{TXT}" font-family="{MONO}">{v}</text>'
     for x, k, v in [(556, "52W HIGH", hi_p), (624, "52W LOW", lo_p), (690, "4W VOL", last4)])
 
-mood_t, rank_t = mood.upper(), rank_name.upper()  # rank + mood pills, right-aligned above the chart
-mw, rw = 22 + 6.6 * len(mood_t), 16 + 6.6 * len(rank_t)
+mood_t = mood.upper()  # mood pill, right-aligned above the chart
+mw = 22 + 6.6 * len(mood_t)
 mx = CX1 - mw
-rx_ = mx - 8 - rw
-pills = (f'<rect x="{rx_:.0f}" y="69" width="{rw:.0f}" height="16" rx="8" fill="{GOLD}" fill-opacity="0.12" stroke="{GOLD}" stroke-opacity="0.5"/>'
-         f'<text x="{rx_ + rw / 2:.0f}" y="80.5" font-size="8.5" font-weight="700" letter-spacing="1" fill="{GOLD}" text-anchor="middle">{esc(rank_t)}</text>'
-         f'<rect x="{mx:.0f}" y="69" width="{mw:.0f}" height="16" rx="8" fill="{UP}" fill-opacity="0.12" stroke="{UP}" stroke-opacity="0.5"/>'
+pills = (f'<rect x="{mx:.0f}" y="69" width="{mw:.0f}" height="16" rx="8" fill="{UP}" fill-opacity="0.12" stroke="{UP}" stroke-opacity="0.5"/>'
          f'<circle cx="{mx + 10:.0f}" cy="77" r="2.5" fill="{UP}"/><text x="{mx + 17:.0f}" y="80.5" font-size="8.5" font-weight="700" letter-spacing="1" fill="{UP}">{esc(mood_t)}</text>')
 
 legend = "".join(f'<rect x="{x}" y="{VY1 + 41}" width="8" height="8" rx="2" fill="{c}"/><text x="{x + 13}" y="{VY1 + 49}" font-size="9.5" fill="{DIM}">{t}</text>'
                  for x, c, t in [(CX0, UP, "Up week (close &gt; open)"), (CX0 + 130, DN, "Down week"), (CX0 + 206, DIM, "Flat")]
                  ) + f'<line x1="{CX0 + 254}" x2="{CX0 + 268}" y1="{VY1 + 45}" y2="{VY1 + 45}" stroke="{GOLD}" stroke-width="1.6"/><text x="{CX0 + 273}" y="{VY1 + 49}" font-size="9.5" fill="{DIM}">MA(4) volume</text>'
 
-tape = [("COMMITS", f"{total:,}", dtxt, dcol), ("RANK", rank_name, None, DIM), ("STREAK", f"{streak}d", None, DIM), ("ACTIVE", str(active), None, DIM),
+tape = [("COMMITS", f"{total:,}", dtxt, dcol), ("STREAK", f"{streak}d", None, DIM), ("ACTIVE", str(active), None, DIM),
         ("LONGEST", f"{longest}d", None, DIM), ("REPOS", str(user["public_repos"]), None, DIM), ("STARS", str(stars), None, DIM),
         ("FOLLOWERS", str(user["followers"]), None, DIM)] + [(n.upper()[:8], f"{100 * b / lang_total:.0f}%", None, DIM) for n, b in lang_rows[:2]]
 TS = 190
@@ -167,7 +155,7 @@ TW = TS * len(tape)
 tape_svg = "".join(item(k * TS + j * TW, t) for j in (0, 1) for k, t in enumerate(tape))
 pw = 24 + 7.2 * len(dtxt)  # change-pill width
 
-write("assets/dashboard.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 {HH}" width="760" height="{HH}" role="img" aria-label="Trading-style dashboard for {esc(USER)}: {rank_name}, {total} contributions, {active} active days, {streak} day streak">
+write("assets/dashboard.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 {HH}" width="760" height="{HH}" role="img" aria-label="Trading-style dashboard for {esc(USER)}: {total} contributions, {active} active days, {streak} day streak">
 <defs><clipPath id="tp"><rect x="16" y="{TY}" width="728" height="30"/></clipPath><clipPath id="av"><circle cx="40" cy="32" r="16"/></clipPath>
 <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{UP}" stop-opacity="0.10"/><stop offset="1" stop-color="{UP}" stop-opacity="0"/></linearGradient>
 <radialGradient id="glow" cx="0.85" cy="0" r="0.7"><stop offset="0" stop-color="{UP}" stop-opacity="0.07"/><stop offset="1" stop-color="{UP}" stop-opacity="0"/></radialGradient></defs>
@@ -294,13 +282,13 @@ write("assets/projects.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox
 
 # ---------- footer: terminal status bar ----------
 chips, cx_ = "", 92
-for label, col in [(f, UP) for f in FOCUS] + [(rank_name, GOLD), ("Market open", UP)]:
+for label, col in [(f, UP) for f in FOCUS] + [("Market open", UP)]:
     t = label.upper()
     w = 22 + 7.0 * len(t)
     chips += (f'<rect x="{cx_:.0f}" y="52" width="{w:.0f}" height="20" rx="10" fill="{col}" fill-opacity="0.12" stroke="{col}" stroke-opacity="0.5"/>'
               f'<text x="{cx_ + w / 2:.0f}" y="65.5" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="{col}" text-anchor="middle">{esc(t)}</text>')
     cx_ += w + 8
-write("assets/footer.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 124" width="760" height="124" role="img" aria-label="{esc(USER)} · {esc(TAGLINE)} · {rank_name} · last updated {now:%b} {now.day}, {now.year}">
+write("assets/footer.svg", f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 124" width="760" height="124" role="img" aria-label="{esc(USER)} · {esc(TAGLINE)} · last updated {now:%b} {now.day}, {now.year}">
 <defs><clipPath id="fav"><circle cx="52" cy="50" r="22"/></clipPath>
 <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{UP}"/><stop offset="1" stop-color="{GOLD}"/></linearGradient></defs>
 <style>
